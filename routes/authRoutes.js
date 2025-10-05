@@ -16,4 +16,14 @@ router.post(
   authCtrl.register
 );
 
+router.post(
+  '/login',
+  [
+    body('email').isEmail().withMessage('Valid email is required'),
+    body('password').notEmpty().withMessage('Password is required')
+  ],
+  validateRequest,
+  authCtrl.login
+);
+
 module.exports = router;
