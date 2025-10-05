@@ -22,9 +22,11 @@ app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
   next();
 });
+const authRoutes = require('./routes/authRoutes');
 const productRoutes = require('./routes/productRoutes');
-app.use('/api/products', productRoutes);
 
+app.use('/api/auth', authRoutes);
+app.use('/api/products', productRoutes);
 // A simple route to check the server quickly
 app.get('/', (req, res) => {
   res.send('API service: server running. Database connection initializing...');
