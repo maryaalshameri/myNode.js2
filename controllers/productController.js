@@ -1,105 +1,60 @@
 // controllers/productController.js
-const Product = require('../models/productModel');
+import Product from "../models/productModel.js";
+import { getIO } from "../socket/socket.js";
 
-/**
- * @desc   Get all products
- * @route  GET /api/products
- */
-exports.getProducts = async (req, res) => {
+// 🆕 إنشاء منتج جديد
+export const createProduct = async (req, res) => {
   try {
-    const products = await Product.find().sort({ createdAt: -1 });
-    res.status(200).json({
-      success: true,
-      count: products.length,
-      data: products
-    });
-  } catch (err) {
-    console.error('❌ getProducts error:', err.message);
-    res.status(500).json({ success: false, message: 'Server Error' });
+    const product = await Product.create(req.body);
+
+    // بث الحدث لكل المستخدمين
+    const io = getIO();
+    io.emit("newProduct", product);
+
+    res.status(201).json({ success: true, data: product });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
-/**
- * @desc   Get single product by ID
- * @route  GET /api/products/:id
- */
-exports.getProductById = async (req, res) => {
+// ✏️ تحديث منتج
+export const updateProduct = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
+    const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+    });
+
     if (!product)
-      return res.status(404).json({ success: false, message: 'Product not found' });
+      return res.status(404).json({ success: false, message: "Product not found" });
+
+    io.emit("productUpdated", {
+      message: `✏️ Product updated: ${product.name}`,
+      product,
+      time: new Date().toLocaleTimeString(),
+    });
 
     res.status(200).json({ success: true, data: product });
-  } catch (err) {
-    console.error('❌ getProductById error:', err.message);
-    res.status(500).json({ success: false, message: 'Server Error' });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
-/**
- * @desc   Create new product
- * @route  POST /api/products
- */
-exports.createProduct = async (req, res) => {
+// ❌ حذف منتج
+export const deleteProduct = async (req, res) => {
   try {
-    const { name, description, category, price, quantity, tags } = req.body;
+    const product = await Product.findByIdAndDelete(req.params.id);
 
-    const newProduct = new Product({
-      name,
-      description,
-      category,
-      price,
-      quantity,
-      tags
+    if (!product)
+      return res.status(404).json({ success: false, message: "Product not found" });
+
+    io.emit("productDeleted", {
+      message: `❌ Product deleted: ${product.name}`,
+      id: req.params.id,
+      time: new Date().toLocaleTimeString(),
     });
 
-    const saved = await newProduct.save();
-
-    res.status(201).json({ success: true, data: saved });
-  } catch (err) {
-    console.error('❌ createProduct error:', err.message);
-    res.status(400).json({ success: false, message: err.message });
-  }
-};
-
-/**
- * @desc   Update product
- * @route  PUT /api/products/:id
- */
-exports.updateProduct = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const updated = await Product.findByIdAndUpdate(id, req.body, {
-      new: true,
-      runValidators: true
-    });
-
-    if (!updated)
-      return res.status(404).json({ success: false, message: 'Product not found' });
-
-    res.status(200).json({ success: true, data: updated });
-  } catch (err) {
-    console.error('❌ updateProduct error:', err.message);
-    res.status(400).json({ success: false, message: err.message });
-  }
-};
-
-/**
- * @desc   Delete product
- * @route  DELETE /api/products/:id
- */
-exports.deleteProduct = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const deleted = await Product.findByIdAndDelete(id);
-
-    if (!deleted)
-      return res.status(404).json({ success: false, message: 'Product not found' });
-
-    res.status(200).json({ success: true, message: 'Product deleted successfully' });
-  } catch (err) {
-    console.error('❌ deleteProduct error:', err.message);
-    res.status(500).json({ success: false, message: 'Server Error' });
+    res.status(200).json({ success: true, message: "Product deleted" });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
   }
 };

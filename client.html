@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Socket.io Realtime Test</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  </head>
+  <body>
+    <h2>🟢 Real-Time Notifications</h2>
+    <ul id="events"></ul>
+
+    <h3>💬 Chat Room</h3>
+    <input id="username" placeholder="Your name" />
+    <input id="message" placeholder="Type a message..." />
+    <button onclick="sendMessage()">Send</button>
+
+    <ul id="chat"></ul>
+
+    <script>
+      const socket = io("http://localhost:3000");
+
+      // استقبال إشعارات المنتجات
+      socket.on("newProduct", (data) => addEvent(data.message));
+      socket.on("productUpdated", (data) => addEvent(data.message));
+      socket.on("productDeleted", (data) => addEvent(data.message));
+
+      // استقبال رسائل الشات
+      socket.on("chatMessage", (data) => {
+        const li = document.createElement("li");
+        li.textContent = `${data.time} - ${data.user}: ${data.message}`;
+        document.getElementById("chat").appendChild(li);
+      });
+
+      function addEvent(msg) {
+        const li = document.createElement("li");
+        li.textContent = msg;
+        document.getElementById("events").appendChild(li);
+      }
+
+      // إرسال رسالة
+      function sendMessage() {
+        const user = document.getElementById("username").value || "Anonymous";
+        const message = document.getElementById("message").value;
+        socket.emit("chatMessage", { user, message });
+        document.getElementById("message").value = "";
+      }
+    </script>
+  </body>
+</html>
