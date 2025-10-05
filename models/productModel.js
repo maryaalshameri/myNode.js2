@@ -1,5 +1,5 @@
 // models/productModel.js
-const mongoose = require('mongoose');
+import mongoose from "mongoose";
 const { Schema } = mongoose;
 
 const ProductSchema = new Schema({
@@ -45,7 +45,7 @@ const ProductSchema = new Schema({
     type: Schema.Types.Mixed
   }
 }, {
-  timestamps: true, // createdAt, updatedAt
+  timestamps: true,
   toJSON: {
     virtuals: true,
     transform(doc, ret) {
@@ -58,24 +58,21 @@ const ProductSchema = new Schema({
   toObject: { virtuals: true }
 });
 
-/* Virtual example: isAvailable */
 ProductSchema.virtual('isAvailable').get(function() {
   return this.inStock && this.quantity > 0;
 });
 
-/* Pre-save hook: generate slug if not provided */
 ProductSchema.pre('save', function(next) {
   if (this.name && !this.slug) {
     this.slug = this.name.toString().toLowerCase()
       .trim()
-      .replace(/[^\w\s-]/g, '')   // remove non word chars
-      .replace(/\s+/g, '-')       // spaces -> dashes
-      .replace(/--+/g, '-');      // collapse dashes
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/--+/g, '-');
   }
   next();
 });
 
-/* Instance method example */
 ProductSchema.methods.applyDiscount = function(percent) {
   if (!percent || percent <= 0) return this.price;
   const newPrice = +(this.price * (1 - percent/100)).toFixed(2);
@@ -83,13 +80,11 @@ ProductSchema.methods.applyDiscount = function(percent) {
   return this.price;
 };
 
-/* Static method example: simple text search wrapper */
 ProductSchema.statics.searchByText = function(q) {
   return this.find({ $text: { $search: q } });
 };
 
-/* Text index for name + description (for full-text search) */
 ProductSchema.index({ name: 'text', description: 'text' });
 
 const Product = mongoose.model('Product', ProductSchema);
-module.exports = Product;
+export default Product;
