@@ -22,6 +22,8 @@ app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
   next();
 });
+const productRoutes = require('./routes/productRoutes');
+app.use('/api/products', productRoutes);
 
 // A simple route to check the server quickly
 app.get('/', (req, res) => {
